@@ -1,11 +1,11 @@
 {
   "name": "discord-cognito-openid-wrapper",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A wrapper to enable AWS Cognito User Pools (which requires OpenID Connect) to talk to Discord (which only provides OAuth2.0)",
   "main": "dist-web/server.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/qwerqy/discord-cognito-openid-wrapper.git"
+    "url": "https://github.com/ebox86/discord-cognito-openid-wrapper.git"
   },
   "scripts": {
     "build": "webpack",
