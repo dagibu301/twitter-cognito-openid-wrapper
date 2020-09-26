@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 const axios = require('axios');
-const btoa = require('btoa');
 const {
   DISCORD_CLIENT_ID,
   DISCORD_CLIENT_SECRET,
@@ -62,17 +61,10 @@ module.exports = (apiBaseUrl, loginBaseUrl) => {
       discordGet(urls.userDetails, accessToken).then(check),
     getUserEmails: accessToken =>
       discordGet(urls.userEmails, accessToken).then(check),
-    getToken: code =>
-      axios({
-        method: 'POST',
-        url: `${
-          urls.oauthToken
-        }?grant_type=authorization_code&redirect_uri=${COGNITO_REDIRECT_URI}&code=${code}`,
-        headers: {
-          Authorization: `Basic ${btoa(
-            `${DISCORD_CLIENT_ID}:${DISCORD_CLIENT_SECRET}`
-          )}`
-        }
-      }).then(check)
+    getToken: code => axios.post(
+      urls.oauthToken,
+      `client_id=${DISCORD_CLIENT_ID}&client_secret=${DISCORD_CLIENT_SECRET}&grant_type=authorization_code&code=${code}&redirect_uri=${encodeURIComponent(COGNITO_REDIRECT_URI)}`,
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    ).then(check)
   };
 };

@@ -1,35 +1,30 @@
 const { NumericDate } = require('./helpers');
 const crypto = require('./crypto');
-const github = require('./github');
+const discord = require('./discord');
 
 const getJwks = () => ({ keys: [crypto.getPublicKey()] });
 
 const getUserInfo = accessToken =>
   Promise.all([
-    github()
+    discord()
       .getUserDetails(accessToken)
       .then(userDetails => {
-        // Here we map the github user response to the standard claims from
+        // Here we map the discord user response to the standard claims from
         // OpenID. The mapping was constructed by following
-        // https://developer.github.com/v3/users/
+        // https://discord.com/developers/docs/topics/oauth2#shared-resources-oauth2-scopes
         // and http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
         const claims = {
           sub: `${userDetails.id}`, // OpenID requires a string
           name: `${userDetails.username}#${userDetails.discriminator}`,
           preferred_username: userDetails.username,
-          profile: 'https://discordapp.com',
           picture: `https://cdn.discordapp.com/avatars/${userDetails.id}/${
             userDetails.avatar
           }.png`,
-          website: 'https://discordapp.com',
-          updated_at: NumericDate(
-            // OpenID requires the seconds since epoch in UTC
-            new Date(Date.parse(userDetails.updated_at))
-          )
+          locale: userDetails.locale
         };
         return claims;
       }),
-    github()
+    discord()
       .getUserEmails(accessToken)
       .then(userData => {
         const primaryEmail = userData.email;
@@ -37,7 +32,7 @@ const getUserInfo = accessToken =>
           throw new Error('User did not have a primary email address');
         }
         const claims = {
-          email: primaryEmail.email,
+          email: primaryEmail,
           email_verified: userData.verified
         };
         return claims;
@@ -45,22 +40,22 @@ const getUserInfo = accessToken =>
   ]).then(claims => claims.reduce((acc, claim) => ({ ...acc, ...claim }), {}));
 
 const getAuthorizeUrl = (client_id, scope, state, response_type) =>
-  github().getAuthorizeUrl(client_id, scope, state, response_type);
+  discord().getAuthorizeUrl(client_id, scope, state, response_type);
 
 const getTokens = (code, state, host) =>
-  github()
+  discord()
     .getToken(code, state)
     .then(discordToken => {
-      // GitHub returns scopes separated by commas
+      // discord returns scopes separated by commas
       // But OAuth wants them to be spaces
       // https://tools.ietf.org/html/rfc6749#section-5.1
       // Also, we need to add openid as a scope,
-      // since GitHub will have stripped it
+      // since discord will have stripped it
       const scope = `openid ${discordToken.scope.replace(',', ' ')}`;
 
       // ** JWT ID Token required fields **
       // iss - issuer https url
-      // aud - audience that this token is valid for (GITHUB_CLIENT_ID)
+      // aud - audience that this token is valid for (discord_CLIENT_ID)
       // sub - subject identifier - must be unique
       // ** Also required, but provided by jsonwebtoken **
       // exp - expiry time for the id token (seconds since epoch in UTC)
@@ -116,9 +111,8 @@ const getConfigFor = host => ({
     'sub',
     'name',
     'preferred_username',
-    'profile',
+    'locale',
     'picture',
-    'website',
     'email',
     'email_verified',
     'updated_at',
