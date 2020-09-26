@@ -25,7 +25,7 @@ Here are some questions you may immediately have:
 
 When deployed, this project sits between Cognito and Discord:
 
-![Overview](docs/overview.png)
+![Overview](docs/overview-discord.png)
 
 This allows you to use Discord as an OpenID Identity Provider (IdP) for federation with a Cognito User Pool.
 
